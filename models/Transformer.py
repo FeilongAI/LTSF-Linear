@@ -13,11 +13,11 @@ class Model(nn.Module):
     """
     def __init__(self, configs):
         super(Model, self).__init__()
-        self.pred_len = configs.pred_len
+        self.pred_len = configs.pred_len# 获取pre_LEN
         self.output_attention = configs.output_attention
 
         # Embedding
-        if configs.embed_type == 0:
+        if configs.embed_type == 0:#初始化模型嵌入块 C
             self.enc_embedding = DataEmbedding(configs.enc_in, configs.d_model, configs.embed, configs.freq,
                                             configs.dropout)
             self.dec_embedding = DataEmbedding(configs.dec_in, configs.d_model, configs.embed, configs.freq,
@@ -43,7 +43,7 @@ class Model(nn.Module):
                                                     configs.dropout)
             self.dec_embedding = DataEmbedding_wo_pos_temp(configs.dec_in, configs.d_model, configs.embed, configs.freq,
                                                     configs.dropout)
-        # Encoder
+        # Encoder 编码层
         self.encoder = Encoder(
             [
                 EncoderLayer(
@@ -56,7 +56,7 @@ class Model(nn.Module):
                     activation=configs.activation
                 ) for l in range(configs.e_layers)
             ],
-            norm_layer=torch.nn.LayerNorm(configs.d_model)
+            norm_layer=torch.nn.LayerNorm(configs.d_model) # LayerNorm（层归一化）
         )
         # Decoder
         self.decoder = Decoder(
@@ -82,7 +82,8 @@ class Model(nn.Module):
     def forward(self, x_enc, x_mark_enc, x_dec, x_mark_dec,
                 enc_self_mask=None, dec_self_mask=None, dec_enc_mask=None):
 
-        enc_out = self.enc_embedding(x_enc, x_mark_enc)
+        enc_out = self.enc_embedding(x_enc, x_mark_enc) # x_enc torch.Size([32, 96, 7]) enc_out torch.Size([32, 96, 512])
+        #TODO
         enc_out, attns = self.encoder(enc_out, attn_mask=enc_self_mask)
 
         dec_out = self.dec_embedding(x_dec, x_mark_dec)

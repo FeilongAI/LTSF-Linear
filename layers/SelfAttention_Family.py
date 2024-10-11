@@ -13,32 +13,32 @@ import os
 
 class FullAttention(nn.Module):
     def __init__(self, mask_flag=True, factor=5, scale=None, attention_dropout=0.1, output_attention=False):
-        super(FullAttention, self).__init__()
-        self.scale = scale
-        self.mask_flag = mask_flag
-        self.output_attention = output_attention
-        self.dropout = nn.Dropout(attention_dropout)
+        super(FullAttention, self).__init__() # 初始化全注意力机制模块
+        self.scale = scale # 缩放因子，用于缓解梯度消失问题
+        self.mask_flag = mask_flag # 是否使用掩码
+        self.output_attention = output_attention   # 是否输出注意力权重
+        self.dropout = nn.Dropout(attention_dropout) # 创建dropout层，用于防止过拟合
 
     def forward(self, queries, keys, values, attn_mask):
-        B, L, H, E = queries.shape
-        _, S, _, D = values.shape
-        scale = self.scale or 1. / sqrt(E)
+        B, L, H, E = queries.shape  # B:批次大小, L:序列长度, H:注意力头数, E:每个头的维度
+        _, S, _, D = values.shape # S:键/值序列长度, D:值的维度
+        scale = self.scale or 1. / sqrt(E)  # 如果没有指定scale，则使用1/sqrt(E)
 
-        scores = torch.einsum("blhe,bshe->bhls", queries, keys)
+        scores = torch.einsum("blhe,bshe->bhls", queries, keys)  # 使用爱因斯坦求和计算注意力分数
 
         if self.mask_flag:
             if attn_mask is None:
-                attn_mask = TriangularCausalMask(B, L, device=queries.device)
+                attn_mask = TriangularCausalMask(B, L, device=queries.device)  # 如果没有提供掩码，创建一个因果掩码（下三角矩阵）
 
-            scores.masked_fill_(attn_mask.mask, -np.inf)
+            scores.masked_fill_(attn_mask.mask, -np.inf)  # 将掩码位置的分数设为负无穷
 
-        A = self.dropout(torch.softmax(scale * scores, dim=-1))
-        V = torch.einsum("bhls,bshd->blhd", A, values)
+        A = self.dropout(torch.softmax(scale * scores, dim=-1))  # 应用softmax和dropout得到注意力权重
+        V = torch.einsum("bhls,bshd->blhd", A, values)  # 使用注意力权重加权求和得到输出值
 
         if self.output_attention:
-            return (V.contiguous(), A)
+            return (V.contiguous(), A)    # 如果需要，同时返回输出值和注意力权重
         else:
-            return (V.contiguous(), None)
+            return (V.contiguous(), None)     # 否则只返回输出值
 
 
 class ProbAttention(nn.Module):
@@ -136,14 +136,14 @@ class AttentionLayer(nn.Module):
                  d_values=None):
         super(AttentionLayer, self).__init__()
 
-        d_keys = d_keys or (d_model // n_heads)
-        d_values = d_values or (d_model // n_heads)
+        d_keys = d_keys or (d_model // n_heads)     #  64 如果没有指定 d_keys 或 d_values，则默认为 d_model // n_heads
+        d_values = d_values or (d_model // n_heads) #64
 
-        self.inner_attention = attention
-        self.query_projection = nn.Linear(d_model, d_keys * n_heads)
+        self.inner_attention = attention  # 设置内部注意力机制（可能是 FullAttention 或其他注意力变体）
+        self.query_projection = nn.Linear(d_model, d_keys * n_heads)  # (512,512)创建查询、键、值的投影层
         self.key_projection = nn.Linear(d_model, d_keys * n_heads)
         self.value_projection = nn.Linear(d_model, d_values * n_heads)
-        self.out_projection = nn.Linear(d_values * n_heads, d_model)
+        self.out_projection = nn.Linear(d_values * n_heads, d_model) # # 创建输出投影层
         self.n_heads = n_heads
 
     def forward(self, queries, keys, values, attn_mask):

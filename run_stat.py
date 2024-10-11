@@ -19,7 +19,7 @@ parser.add_argument('--train_only', type=bool, required=False, default=False, he
 parser.add_argument('--embed', type=str, default='timeF',
                     help='Not implemented')
 parser.add_argument('--model_id', type=str, required=True, default='test', help='model id')
-parser.add_argument('--model', type=str, required=True, default='Autoformer',
+parser.add_argument('--model', type=str, required=True, default='Transformer',
                     help='model name, options: [Autoformer, Informer, Transformer]')
 
 # data loader
@@ -42,7 +42,7 @@ parser.add_argument('--pred_len', type=int, default=96, help='prediction sequenc
 # optimization
 parser.add_argument('--num_workers', type=int, default=10, help='Not implemented')
 parser.add_argument('--itr', type=int, default=2, help='experiments times')
-parser.add_argument('--batch_size', type=int, default=100, help='batch size of train input data')
+parser.add_argument('--batch_size', type=int, default=32, help='batch size of train input data')
 parser.add_argument('--des', type=str, default='test', help='exp description')
 
 args = parser.parse_args()
